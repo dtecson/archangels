@@ -1,0 +1,40 @@
+<div id="node-<?php print $node->nid; ?>" class="<?php print $classes; ?>"<?php print $attributes; ?>>
+
+  <?php print $user_picture; ?>
+
+  <?php print render($title_prefix); ?>
+  <?php if (!$page): ?>
+    <h2<?php print $title_attributes; ?>><a href="<?php print $node_url; ?>"><?php print $title; ?></a></h2>
+  <?php endif; ?>
+  <?php print render($title_suffix); ?>
+
+  <?php if ($display_submitted): ?>
+    <span class="submitted"><?php print $submitted ?></span>
+  <?php endif; ?>
+
+  <div class="content clearfix"<?php print $content_attributes; ?>>
+
+<?php //print render($content['field_plays_magfed']); ?>
+<?php
+$output= field_get_items('node', $node, 'field_callsign');
+$output = $output[0]['value'];
+//print $output;
+?>
+
+<?php //print_r(render($node)) ?>
+    <?php
+      hide($content['comments']);
+      hide($content['links']);
+      print render($content);
+    ?>
+  </div>
+
+  <div class="clearfix">
+    <?php if (!empty($content['links'])): ?>
+      <div class="links clearfix"><?php print render($content['links']); ?></div>
+    <?php endif; ?>
+
+    <?php print render($content['comments']); ?>
+  </div>
+
+</div>

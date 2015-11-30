@@ -9,6 +9,14 @@ function bluemasters_preprocess_html(&$variables) {
 	endif;
 }
 
+function bluemasters_preprocess_page(&$variables, $hook) {  // Add theme suggestion for all content types
+    if (isset($variables['node'])) {
+        if ($variables['node']->type != '') {
+            $variables['theme_hook_suggestions'][] = 'page__node__' . $variables['node']->type;
+        }
+    }
+}
+
 
 /**
  * Add javascript files for jquery slideshow.
