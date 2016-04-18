@@ -1,4 +1,4 @@
-<div id="node-<?php print $node->nid; ?>" class="<?php print $classes; ?>"<?php print $attributes; ?>>
+<div id="node-<?php print $node->nid; ?>" class="<?php print $classes; ?> container_12"<?php print $attributes; ?>>
 
   <?php print $user_picture; ?>
 
@@ -14,20 +14,27 @@
 
   <div class="content clearfix"<?php print $content_attributes; ?>>
 
-<?php //print render($content['field_plays_magfed']); ?>
 <?php
-$output= field_get_items('node', $node, 'field_callsign');
-$output = $output[0]['value'];
-//print $output;
-?>
+//print field_get_items('node', $node, 'field_callsign')[0]['value'];
 
-<?php //print_r(render($node)) ?>
+$imageone = $node->field_headshot['und'][0]['uri'];
+$style = 'bio_headshot';
+?>
+    <div class="grid_3"> <img src="<?php print image_style_url($style, $imageone) ?>"></div>
+    <div class="grid_9">
+      <?php print $title; ?>
+      <?php //print field_get_items('node', $node, 'field_rank')[0]['value']; ?>
+    </div>
+
     <?php
       hide($content['comments']);
       hide($content['links']);
       print render($content);
     ?>
   </div>
+
+  <?php print views_embed_view('events', 'block_1', $node->nid); ?>
+
 
   <div class="clearfix">
     <?php if (!empty($content['links'])): ?>
@@ -38,3 +45,4 @@ $output = $output[0]['value'];
   </div>
 
 </div>
+<?php //print_r(render($node)) ?>
