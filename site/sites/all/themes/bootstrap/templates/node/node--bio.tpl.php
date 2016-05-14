@@ -80,38 +80,75 @@
  */
 ?>
 <article id="node-<?php print $node->nid; ?>" class="<?php print $classes; ?> clearfix"<?php print $attributes; ?>>
-  <div class="row">
-  <div class="col-md-3">
-    <?php print render($content['field_headshot']); ?>
-    <?php print render($content['field_nameplate']); ?>
-  </div>
-  <div class="col-md-9">
-    <h1><?php print $title; ?></h1>
-    <?php print render($content['field_playing_status']); ?>
-    <?php print render($content['field_rank']); ?>
-    <?php print render($content['field_primary_marker']); ?>
-    <?php print render($content['field_secondary_marker']); ?>
-    <?php print render($content['field_other_marker']); ?>
-    <?php print render($content['field_barrels']); ?>
-    <?php print render($content['field_gear_loadout']); ?>
-  </div>
-  </div>
-  <?php
-    // Hide comments, tags, and links now so that we can render them later.
-    hide($content['comments']);
-    hide($content['links']);
-    hide($content['field_tags']);
-    print render($content);
-  ?>
-  <h4>Events Attended</h4>
-  <?php
-  echo views_embed_view('events', $display_id = 'block_1');
-  ?>
-  <?php if (!empty($content['field_tags']) || !empty($content['links'])): ?>
-  <footer>
-    <?php print render($content['field_tags']); ?>
-    <?php print render($content['links']); ?>
-  </footer>
-  <?php endif; ?>
-  <?php print render($content['comments']); ?>
+    <div class="row">
+        <div class="col-md-3">
+            <?php print render($content['field_headshot']); ?>
+            <?php print render($content['field_nameplate']); ?>
+            <?php print render($content['field_affiliations']); ?>
+        </div>
+        <div class="col-md-9">
+            <div class="row">
+                <div class="col-md-12">
+                    <h1><?php print $title; ?></h1>
+                    <div class="row">
+                        <div class="col-sm-3"><?php print render($content['field_playing_status']); ?></div>
+                        <div class="col-sm-2"><?php print render($content['field_rank']); ?></div>
+                        <div class="col-sm-3">
+                            <div class="field field-label-inline clearfix">
+                                <div class="field-label">Scenarios:&nbsp;</div>
+                                <div class="field-items"><?php echo count(views_get_view_result('events', 'block_1')); ?></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <?php print render($content['field_bio']); ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <h3>Gear</h3>
+                </div>
+                <div class="col-md-4">
+                    <?php print render($content['field_primary_marker']); ?>
+                </div>
+                <div class="col-md-4">
+                    <?php print render($content['field_secondary_marker']); ?>
+                </div>
+                <div class="col-md-4">
+                    <?php print render($content['field_other_marker']); ?>
+                </div>
+                <div class="col-md-4">
+                    <?php print render($content['field_barrels']); ?>
+                </div>
+                <div class="col-md-4">
+                    <?php print render($content['field_gear_loadout']); ?>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <h3>Photo Gallery</h3>
+                    <?php print render($content['field_gallery']); ?>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <h3>Scenarios Attended - <?php echo count(views_get_view_result('events', 'block_1')); ?></h3>
+                    <?php
+                    echo views_embed_view('events', $display_id = 'block_1');
+                    ?>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <?php if (!empty($content['field_tags']) || !empty($content['links'])): ?>
+        <footer>
+            <?php print render($content['field_tags']); ?>
+            <?php print render($content['links']); ?>
+        </footer>
+    <?php endif; ?>
+    <?php print render($content['comments']); ?>
 </article>
