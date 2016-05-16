@@ -83,7 +83,8 @@
     <div class="row">
         <div class="col-md-3">
             <?php print render($content['field_headshot']); ?>
-            <?php print render($content['field_nameplate']); ?>
+            <?php print render($content['field_callsign_image']); ?>
+            <?php print render($content['field_mark']); ?>
             <?php print render($content['field_affiliations']); ?>
         </div>
         <div class="col-md-9">

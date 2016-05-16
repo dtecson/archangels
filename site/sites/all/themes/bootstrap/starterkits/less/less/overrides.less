@@ -839,6 +839,54 @@ body.navbar-tray-open.navbar-vertical.navbar-fixed {
 }
 
 .main-container{
-  margin-top: 35px;
+  margin-top: 50px;
+
+  @media @tablet {
+    margin-top: 60px;
+  }
+  @media @normal {
+    margin-top: 60px;
+  }
+  @media @wide {
+    margin-top: 80px;
+  }
 }
 
+.navbar .logo-container{
+  @media @tablet {
+    padding-right:0;
+  }
+}
+
+.navbar-toggle{
+  float: none;
+}
+
+.view-id-members .col{
+  padding-bottom:15px;
+}
+
+.view-id-events .col{
+  padding-bottom:15px;
+}
+
+.field-name-field-gallery{
+  .field-item{
+    float:left;
+    padding: 8px;
+
+    img{
+      padding: 2px;
+      line-height: 1.42857143;
+      background-color: #fff;
+      border: 1px solid #ddd;
+      border-radius: 2px;
+    }
+  }
+}
+
+@media (min-width: 768px) {
+  .navbar-nav > li > a {
+    padding: 5px 20px;
+  }
+}
