@@ -4,25 +4,19 @@
  * @file
  * Provide Users to take ownership of the node.
  */
- 
- /**
+
+/**
   * Implements hook_views_api().
   */
 function nodeownership_views_api() {
  return array(
-   'api' => 2,
+   'api' => 3,
    'path' => drupal_get_path('module', 'nodeownership') . '/includes',
  );
 }
 
 /**
  * Implements hook_help().
- *
- * @param $section
- *   string file path
- *
- * @return
- *   string
  */
 function nodeownership_help($page = 'admin/config/help#nodeownership', $arg) {
   switch ($page) {
@@ -38,28 +32,26 @@ when user claims any node or admin approves any claim.');
 
 /**
  * Implements hook_permission().
- *
- * @return
- *   array of permissions
  */
 function nodeownership_permission() {
   return array(
     'access claim page' => array(
       'title' => t('access claim page'),
       'description' => t('Allows a user to claim ownership of nodes, generating a claim request.'),
-    ),    
+    ),
     'administer nodeownership' => array(
       'title' => t('Administer node ownership claims'),
       'description' => t('Allows a user to view, approve, and decline node ownership claims.'),
     ),
+    'show claim link' => array(
+      'title' => t('Show claim link'),
+      'description' => t('Allows a user to see a claim link.'),
+    )
   );
 }
 
 /**
  * Implements hook_menu().
- *
- * @return
- *   array of menu information
  */
 function nodeownership_menu() {
   $items['admin/config/nodeownership'] = array(
@@ -80,19 +72,23 @@ function nodeownership_menu() {
     'description' => 'Global configuration of the node ownership',
     'file' => 'nodeownership.admin.inc',
     'file path' => drupal_get_path('module', 'nodeownership') . '/includes',
-  );  
-  $items['node/%/claim'] = array(
-    'page callback' => '_get_claim',
+  );
+  $items['node/%node/claim'] = array(
+    'page callback' => 'nodeownership_get_claim',
     'page arguments' => array(1),
     'type' => MENU_CALLBACK,
-    'title' => 'Are you sure?',
+    'title' => 'Claim this node',
     'access arguments' => array('access claim page'),
+    'file' => 'nodeownership.pages.inc',
+    'file path' => drupal_get_path('module', 'nodeownership') . '/includes',
   );
   $items['admin/config/nodeownership/nodeclaim/%/%'] = array(
     'page callback' => '_node_claim_process',
     'page arguments' => array(4, 5),
     'title' => 'Ownership claim confirmation',
     'access arguments' => array('administer site configuration'),
+    'file' => 'nodeownership.pages.inc',
+    'file path' => drupal_get_path('module', 'nodeownership') . '/includes',
   );
   return $items;
 }
@@ -101,30 +97,18 @@ function nodeownership_menu() {
  * Implements hook_node_view().
  */
 function nodeownership_node_view($node, $view_mode = 'full') {
+
   global $user;
-  $types_to_annotate = variable_get('node_types', array('page'));
-  if (!isset($types_to_annotate[$node->type]) || !user_access('access claim page') || $user->uid == $node->uid) {
+  $types_to_annotate = variable_get('nodeownership_node_types', array('page'));
+  if (empty($types_to_annotate[$node->type]) || !user_access('show claim link') || $user->uid == $node->uid) {
     return;
   }
-  
-  // @todo allow custom link text per content type.
-  $variables = array(
-    '@type' => node_type_get_type($node)->name,
-    '@title' => $node->title
-  );
-  $text = strtr(variable_get('nodeownership_link_text', 'Claim'), $variables);
 
+  $text = variable_get('nodeownership_link_text', t('Claim'));
+  $text_pending = variable_get('nodeownership_pending_text', t('Claim pending'));
   // If the user is anonymous.
   if (!$user->uid) {
-    // Generate normal claim link.
-    if (variable_get('nodeownership_anon', 'permitted') == 'permitted') {
-      $link = l($text, 'node/' . $node->nid . '/claim');
-    }
-    // Prompt anonymous user to register during claim process.
-    else {
-      $_SESSION['nodeownership']['node'] = $node;
-      $link = l($text, 'user/register');
-    }
+    $link = l($text, 'user/register', array('query' => array('destination' => 'node/' . $node->nid . '/claim')));
   }
 
   // If the user is authenticated.
@@ -139,8 +123,7 @@ function nodeownership_node_view($node, $view_mode = 'full') {
 
     // Build dummy link for pending claims.
     if ($num_claims > 0) {
-      //$link = '<a name="claim-pending" class="claim-pending">' . t('Claim pending') . '</a>';
-      $link = '<span name="claim-pending" class="claim-pending">' . t('Claim pending') . '</span>';
+      $link = '<span name="claim-pending" class="claim-pending">' . $text_pending . '</span>';
     }
     // Build claim link.
     else {
@@ -164,121 +147,7 @@ function nodeownership_node_view($node, $view_mode = 'full') {
 }
 
 /**
- * Implementation of logic for user claim
- *
- * @param $nid
- *   Node id of the claimed node.
- */
-function _get_claim($nid) {
-  global $user;
-  $result_claimed  = "SELECT uid FROM {nodeownership} WHERE nid = :nid AND status = 1";
-  $result_exist    = "SELECT nid FROM {nodeownership} WHERE nid = :nid AND uid = :uid AND status=0";
-  $result_declined = "SELECT nid FROM {nodeownership} WHERE uid = :uid AND nid= :nid AND status = 2";
-
-  if (db_query($result_claimed, array(':nid' => $nid))->fetchField()) {
-    drupal_set_message(t('Someone else has claimed this node and admin has verified. So you can not claim it !!'));
-    drupal_goto('node/' . $nid);
-  }
-  elseif (db_query($result_exist, array(':nid' => $nid, ':uid' => $user->uid))->fetchField()) {
-    drupal_set_message(t('Your request is underprocess. Admin will contact you soon.'));
-    drupal_goto('node/' . $nid);
-  }
-  elseif (db_query($result_declined, array(':nid' => $nid, ':uid' => $user->uid))->fetchField()) {
-    drupal_set_message(t('Your request for this node is already declined by the admin. Do not try to claim any more otherwise you may face serious consequences.'));
-    drupal_goto('node/' . $nid);
-  }
-  else {
-    $content = drupal_get_form('nodeownership_claim_form', $nid);
-    return $content;
-  }
-}
-
-/**
- * Implements hook_form_FORM_ID_alter().
- */
-function nodeownership_form_user_register_form_alter(&$form, $form_state) {
-  if (isset($_SESSION['nodeownership']['node'])) {
-    $node = $_SESSION['nodeownership']['node'];
-    
-    // Prepare claim form.
-    $claim_form = nodeownership_claim_form(array(), $form_state, $node->nid);
-    $claim_form['claim']['#weight'] = 10;
-    unset($claim_form['claim']['submit']);
-    
-    // Merge forms.
-    $form += $claim_form;
-    drupal_set_message(t('You must register before claiming ownership this @type', array('@type' => node_type_get_type($node)->name)));
-  }
-}
-
-/**
- * Implementation of the use claim form.
- *
- * @param $form_state
- *   The form state
- * @param $nid
- *   Node Id of the claimed node.
- *
- * @return
- *   return form element.
- */
-function nodeownership_claim_form($form, &$form_state, $nid) {
-  $form          = array();
-  $node_title    = db_query("SELECT title FROM {node} WHERE nid = :nid", array(':nid' => $nid))->fetchField();
-  $form['claim'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Claim Details'),
-    '#value' => '<br/>' . t('NOTE: False claims may lead to termination of your account on our site.'),
-    '#weight' => -9,
-  );
-  $form['claim']['nid'] = array(
-    '#type' => 'value',
-    '#value' => $nid,
-  );
-  $form['claim']['contact'] = array(
-    '#type' => 'textarea',
-    '#title' => t('Contact information'),
-    '#description' => t('Please provide your contact details here so that we can contact you and verify your identity'),
-    '#required' => TRUE,
-  );
-  $form['claim']['notes'] = array(
-    '#type' => 'textarea',
-    '#title' => t('Additional Details'),
-    '#description' => t('Any other details that you might want to provide which may help us verify your identity.'),
-  );
-  $form['claim']['submit'] = array(
-    '#type' => 'submit',
-    '#value' => t('Submit Claim'),
-  );
-  return $form;
-}
-
-/**
- * Implementation for user claim submission.
- *
- * @param $form
- *   form filled by user
- * @param $form_state
- *   state of the form submitted.
- */
-function nodeownership_claim_form_submit($form, &$form_state) {
-  global $user;
-
-  $claim = (object) array(
-    'uid' => $user->uid,
-    'nid' => $form_state['values']['nid'],
-    'contact' => $form_state['values']['contact'],
-    'notes' => $form_state['values']['notes'],
-    'status' => 0,
-    'timestamp' => REQUEST_TIME,
-  );
-  entity_save('claim', $claim);
-
-  return drupal_goto('node/' . $form_state['values']['nid']);
-}
-
-/**
- * Implments hook_entity_insert().
+ * Implements hook_entity_insert().
  */
 function nodeownership_claim_insert() {
   global $user;
@@ -289,227 +158,20 @@ function nodeownership_claim_insert() {
   $recipient['uid']  = 1;
   $recipient['name'] = db_query("SELECT name FROM {users} WHERE uid = 1")->fetchField();
   $mail              = drupal_mail('nodeownership', 'user_claim', $recipient['mail'], $language);
-  drupal_set_message(t('Your claim has been recorded and a mail has been sent to admin. We will contact you shortly.'));
-}
-
-/**
- * Implements hook_user_insert().
- *
- * Handles claims made by anonymous users during registration.
- *
- */
-function nodeownership_user_insert(&$edit, $account, $category) {
-  if (isset($_SESSION['nodeownership']['node'])) {
-    $node = $_SESSION['nodeownership']['node'];
-    unset($_SESSION['nodeownership']['claim']);
-
-    $claim = (object) array(
-      'uid' => $account->uid,
-      'nid' => $node->nid,
-      'contact' => $edit['contact'],
-      'notes' => $edit['notes'],
-      'status' => 0,
-      'timestamp' => REQUEST_TIME,
-    );
-
-    entity_save('claim', $claim);
-    drupal_goto('node/' . $node->nid);
-  }
-}
-
-/*
- * Implementation of logic for claim confirmation by admin(approve/reject).
- * @param $type
- *   confirmation type approve/decline.
- * @param $nid
- *   nid of the node.
- * @param $uid
- *   uid of the claimed user.
- */
-function _node_claim_process($type, $id) {
-  $claim = entity_load_single('claim', $id);
-
-  if ($type == 'approve') {
-    nodeownership_claim_approve($claim);
-  }
-  elseif ($type == 'decline') {
-    nodeownership_claim_decline($claim);
-  }
-  else {
-    drupal_set_message(t("Invalid Url!!"));
-    drupal_goto('admin/config/nodeownership/nodeclaims');
-  }
-}
-
-/**
- * Approves a claim.
- */
-function nodeownership_claim_approve($claim) {
-  if ($claim->uid == 0) {
-    drupal_set_message(t('Error: you cannot approve claim #@claim_id because it was made by an anonmyous user. You will have to manually create a new user account and set ownership for this request. If you want to remove it from the queue, delete it using the provided Views Bulk Operatons actions.', array('@claim_id' => $claim->id)), 'error');
-    return FALSE;
-  }
-  elseif ($claim->status != 0) {
-    drupal_set_message(t('Error: you cannot approve claim #@claim_id because it is not a pending claim.', array('@claim_id' => $claim->id)), 'error');
-    return FALSE;
-  }
-  
-  // Update nodeownership table for node owner status
-  $num_updated = db_update('nodeownership')
-    ->fields(array('status' => 1))
-    ->condition('id', $claim->id, '=')
-    ->execute();
-
-  // Update node table for updating author info
-  $num_updated = db_update('node')
-    ->fields(array('uid' => $claim->uid))
-    ->condition('nid', $claim->nid, '=')
-    ->execute();
-
-  $query = db_select('node', 'n');
-  $query->fields('n', array('vid'))
-    ->condition('nid', $claim->nid);
-  $vid = $query->execute()->fetchField();
-  
-  $query = db_select('node_revision', 'nr');
-  $query->addExpression('MAX(vid)', 'max_vid');
-  $query->condition('nid', $claim->nid)
-    ->condition('vid', $vid, '>')
-    ->condition('uid', $claim->uid);
-  $max_vid = $query->execute()->fetchField();
-
-  if ($max_vid) {
-    $num_updated = db_update('node')
-      ->fields(array('vid' => $max_vid))
-      ->condition('nid', $claim->nid, '=')
-      ->execute();
-  }
-  if (module_exists('revision_moderation')) {
-    $num_updated = db_update('revision_moderation')
-      ->fields(array('revision_moderation' => 0))
-      ->condition('nid', $claim->nid, '=')
-      ->execute();
-  }
-  nodeownership_send_mail('approve', $claim->uid);
-  
-  return $num_updated ? TRUE : FALSE;
-}
-
-/**
- * Declines a claim.
- */
-function nodeownership_claim_decline($claim) {
-  if ($claim->uid == 0) {
-    drupal_set_message(t('Error: you cannot decline claim #@claim_id because it was made by an anonmyous user. If you want to remove it from the queue, delete it using the provided Views Bulk Operatons actions.', array('@claim_id' => $claim->id)), 'error');
-    return FALSE;
-  }
-  if ($claim->status != 0) {
-    drupal_set_message(t('Error: you cannot decline claim #@claim_id for <em>@title</e> because it is not a pending claim.', array('@claim_id' => $claim->id)), 'error');
-    return FALSE;
-  }
-  
-  $num_updated = db_update('nodeownership')
-    ->fields(array('status' => 2))
-    ->condition('id', $claim->id, '=')
-    ->execute();
-
-  nodeownership_send_mail('decline', $claim->uid);
-  
-  return $num_updated ? TRUE : FALSE;
-}
-
-/**
- * Sets parameters for outgoing mail and execute mail delivery
- * for admin 
- */
-function nodeownership_send_mail($type, $uid) {
-  global $language;
-
-  $to = db_select('users', 'u')
-    ->fields('u', array('mail', 'name'))
-    ->condition('uid', $uid)
-    ->execute()
-    ->fetchAssoc();
-  $mail = drupal_mail('nodeownership', 'admin_' . $type, $to['mail'], $language);
-
-  $message = array(
-    'approve' => 'Request Approved and a confirmation mail has been sent to user.',
-    'decline' => 'Request Declined and a confirmation mail has been sent to user.',
-  );
-  drupal_set_message(t($message[$type]));
-  drupal_goto('admin/config/nodeownership/nodeclaims');
-}
-
-/**
- * Function for setting default mail content and saving custom mail content by admin.
- *
- * @param $key
- *   parameter for different mail content.
- * @param $language
- *   It is optional.
- * @param $variables
- *   a set of variables to be used inside mail content.
- *
- * @return
- *   it returns the subject and body of different mail.
- */
-function _nodeownership_mail_text($key, $language = NULL, $variables = array()) {
-  $langcode = isset($language) ? $language->language : NULL;
-  if ($admin_setting = variable_get($key, FALSE)) {
-    // An admin setting overrides the default string.
-    return strtr($admin_setting, $variables);
-  }
-  else {
-    // No override, return default string.
-    switch ($key) {
-      case 'user_claim_subject':
-        return t('Node Claim By !username at !site', $variables, array('langcode' => $langcode));
-
-      case 'user_claim_body':
-        return t("Hello!!,\n\n User !username has claim a node. So Please review it and confirm as soon as possible.", $variables, array('langcode' => $langcode));
-
-      case 'admin_approve_subject':
-        return t('Approval for claimed node', $variables, array('langcode' => $langcode));
-
-      case 'admin_approve_body':
-        return t("Hello!!,\n\n Admin has approved your claimed for the node. From now onward you are the owner of the claimed node.", $variables, array('langcode' => $langcode));
-
-      case 'admin_decline_subject':
-        return t('Approval for claimed node', $variables, array('langcode' => $langcode));
-
-      case 'admin_decline_body':
-        return t("Sorry!!,\n\n Admin has rejected your claimed for the node. For further details contact the administrator.", $variables, array('langcode' => $langcode));
-    }
-  }
+  drupal_set_message(t('Your claim has been recorded and an email has been sent to the site administrators.'));
 }
 
 /**
  * Implements of hook_mail().
  */
 function nodeownership_mail($key, &$message, $params) {
+  module_load_include('inc', 'nodeownership', 'includes/nodeownership');
+
   $language = $message['language'];
   $variables = nodeownership_mail_tokens($language);
-  
+
   $message['subject'] .= _nodeownership_mail_text($key . '_subject', $language, $variables);
   $message['body'][] = _nodeownership_mail_text($key . '_body', $language, $variables);
-}
-
-/**
- * Implementation for the dyanamic variable used in mail.
- */
-function nodeownership_mail_tokens($language) {
-  global $base_url;
-  global $user;
-  
-  $tokens = array(
-    '!username' => $user->name,
-    '!site' => variable_get('site_name', 'Drupal'),
-    '!uri' => $base_url,
-    '!uri_brief' => preg_replace('!^https?://!', '', $base_url),
-    '!mailto' => $user->mail,
-    '!date' => format_date(REQUEST_TIME, 'medium', '', NULL, $language->language),
-  );
-  return $tokens;
 }
 
 /**
@@ -535,19 +197,18 @@ function nodeownership_entity_info() {
 /**
  * Implements hook_action_info().
  */
-
 function nodeownership_action_info() {
   return array(
     'nodeownership_approve_claim_action' => array(
-      'type' => 'claim', 
-      'label' => t('Approve claim'), 
-      'configurable' => FALSE, 
+      'type' => 'claim',
+      'label' => t('Approve claim'),
+      'configurable' => FALSE,
       'triggers' => array('any'),
     ),
     'nodeownership_decline_claim_action' => array(
-      'type' => 'claim', 
-      'label' => t('Decline claim'), 
-      'configurable' => FALSE, 
+      'type' => 'claim',
+      'label' => t('Decline claim'),
+      'configurable' => FALSE,
       'triggers' => array('any'),
     ),
   );
@@ -563,6 +224,7 @@ function nodeownership_action_info() {
  */
 function nodeownership_decline_claim_action(&$entity, $context = array()) {
   // @todo return error message on failure.
+  module_load_include('inc', 'nodeownership', 'includes/nodeownership');
   $success = nodeownership_claim_decline($entity);
 }
 
@@ -575,6 +237,7 @@ function nodeownership_decline_claim_action(&$entity, $context = array()) {
  *   Array with parameters for this action: depends on the trigger.
  */
 function nodeownership_approve_claim_action(&$entity, $context = array()) {
-    // @todo return error message on failure.
-    $success = nodeownership_claim_approve($entity);
+  // @todo return error message on failure.
+  module_load_include('inc', 'nodeownership', 'includes/nodeownership');
+  $success = nodeownership_claim_approve($entity);
 }

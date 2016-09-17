@@ -19,6 +19,16 @@ function nodeownership_views_data() {
     'title' => t('Node ownership claims'),
     'access query tag' => 'node_access',
   );
+  $data['nodeownership']['table']['join'] = array(
+    'users' => array(
+      'left_field' => 'uid',
+      'field' => 'uid',
+    ),
+    'node' => array(
+      'right_field' => 'nid',
+      'field' => 'nid',
+    ),
+  );
 
   // ----------------------------------------------------------------
   // nodeownership -- fields
@@ -153,43 +163,6 @@ function nodeownership_views_data() {
       'handler' => 'views_handler_field_nodeownership_decline_link',
     ),
   );
-
-  // ----------------------------------------------------------------
-  // users -- fields
-  // fbid
-  /*
-  $data['users']['fbid'] = array(
-    'title' => t('Facebook ID'),
-    // The help that appears on the UI,
-    'help' => t('The users ID on Facebook.'),
-    'relationship' => array(
-      'base' => 'fboauth_users',
-      'base field' => 'uid',
-      'relationship table' => 'users',
-      'relationship field' => 'uid',
-      'label' => 'user_fboauth',
-      'help' => t('Bring in data about the Drupal user\'s Facebook account.'),
-      'skip base' => 'fboauth_users',
-    ),
-  );
-
-  $data['users']['base_uid'] = array(
-    'title' => t('Facebook Friendship Base UID'),
-    // The help that appears on the UI,
-    'help' => t('The Drupal uid in a facebook friendship.'),
-    'relationship' => array(
-      'base' => 'nodeownership',
-      'base field' => 'uid',
-      'relationship table' => 'users',
-      'relationship field' => 'uid',
-      'label' => 'user_nodeownership',
-      'help' => t('Bring in data about the Drupal user\'s Facebook friends.'),
-      'skip base' => 'nodeownership',
-    ),
-  );
-  */
-
-
 
   return $data;
 }

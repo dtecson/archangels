@@ -16,14 +16,14 @@ function nodeownership_views_default_views() {
   $view->description = 'List of node ownership claims';
   $view->tag = 'default';
   $view->base_table = 'nodeownership';
-  $view->human_name = 'nodeownership_claims';
+  $view->human_name = 'Node Ownership claims';
   $view->core = 7;
   $view->api_version = '3.0';
   $view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
 
   /* Display: Master */
   $handler = $view->new_display('default', 'Master', 'default');
-  $handler->display->display_options['title'] = 'Node Ownership Claims';
+  $handler->display->display_options['title'] = 'Node ownership claims';
   $handler->display->display_options['access']['type'] = 'perm';
   $handler->display->display_options['access']['perm'] = 'administer nodeownership';
   $handler->display->display_options['cache']['type'] = 'none';
@@ -34,23 +34,17 @@ function nodeownership_views_default_views() {
   $handler->display->display_options['pager']['options']['items_per_page'] = '50';
   $handler->display->display_options['style_plugin'] = 'table';
   $handler->display->display_options['style_options']['columns'] = array(
-    'views_bulk_operations' => 'views_bulk_operations',
     'uid' => 'uid',
     'nid' => 'nid',
     'contact' => 'contact',
     'notes' => 'notes',
     'timestamp' => 'timestamp',
     'status' => 'status',
-    'approve_link' => 'approve_link',
+    'accept_link' => 'accept_link',
     'decline_link' => 'decline_link',
   );
   $handler->display->display_options['style_options']['default'] = '-1';
   $handler->display->display_options['style_options']['info'] = array(
-    'views_bulk_operations' => array(
-      'align' => '',
-      'separator' => '',
-      'empty_column' => 0,
-    ),
     'uid' => array(
       'sortable' => 1,
       'default_sort_order' => 'asc',
@@ -93,7 +87,7 @@ function nodeownership_views_default_views() {
       'separator' => '',
       'empty_column' => 0,
     ),
-    'approve_link' => array(
+    'accept_link' => array(
       'align' => '',
       'separator' => '',
       'empty_column' => 0,
@@ -106,15 +100,7 @@ function nodeownership_views_default_views() {
   );
   $handler->display->display_options['style_options']['override'] = 1;
   $handler->display->display_options['style_options']['sticky'] = 1;
-  $handler->display->display_options['style_options']['empty_table'] = 1;
-  /* No results behavior: Global: Text area */
-  $handler->display->display_options['empty']['area']['id'] = 'area';
-  $handler->display->display_options['empty']['area']['table'] = 'views';
-  $handler->display->display_options['empty']['area']['field'] = 'area';
-  $handler->display->display_options['empty']['area']['empty'] = FALSE;
-  $handler->display->display_options['empty']['area']['content'] = 'There are no claims of this type.';
-  $handler->display->display_options['empty']['area']['format'] = 'filtered_html';
-  $handler->display->display_options['empty']['area']['tokenize'] = 0;
+  $handler->display->display_options['style_options']['empty_table'] = 0;
   /* Field: Bulk operations: Node ownership */
   $handler->display->display_options['fields']['views_bulk_operations']['id'] = 'views_bulk_operations';
   $handler->display->display_options['fields']['views_bulk_operations']['table'] = 'nodeownership';
@@ -413,13 +399,12 @@ function nodeownership_views_default_views() {
 
   /* Display: Page */
   $handler = $view->new_display('page', 'Page', 'page');
-  $handler->display->display_options['path'] = 'admin/content/claim';
+  $handler->display->display_options['path'] = 'admin/content/claims';
   $handler->display->display_options['menu']['type'] = 'tab';
-  $handler->display->display_options['menu']['title'] = 'Node ownership claims';
-  $handler->display->display_options['menu']['description'] = 'Administrative interface for managing node ownership claims';
+  $handler->display->display_options['menu']['title'] = 'Node Ownership Claims';
   $handler->display->display_options['menu']['weight'] = '0';
-  $handler->display->display_options['menu']['name'] = 'management';
   $handler->display->display_options['menu']['context'] = 0;
+
 
   $export[$view->name] = $view;
 

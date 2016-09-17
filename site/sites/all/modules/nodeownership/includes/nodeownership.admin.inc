@@ -8,19 +8,33 @@
  */
 function nodeownership_admin_settings($form, &$form_state) {
   $node_types = node_type_get_names();
-  $form['node_types'] = array(
+  $form['nodeownership_node_types'] = array(
     '#type' => 'checkboxes',
-    '#title' => t('Content types which could be claimed for ownership'),
-    '#description' => t('This allow to add content type which could be claimed..'),
+    '#title' => t('Content types which can be claimed for ownership'),
     '#options' => $node_types,
-    '#default_value' => variable_get('node_types', array('page')),
+    '#default_value' => variable_get('nodeownership_node_types', array('page')),
   );
+
+  $form['nodeownership_link_text'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Claim Text'),
+    '#description' => t('The text that will be shown for the claiming the node'),
+    '#default_value' => variable_get('nodeownership_link_text', 'Claim'),
+  );
+  $form['nodeownership_pending_text'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Claim Pending Text'),
+    '#description' => t('The text that will be shown for pending claims'),
+    '#default_value' => variable_get('nodeownership_pending_text', 'Claim Pending'),
+  );
+
+
   $form['email'] = array(
     '#type' => 'fieldset',
     '#title' => t('E-mail settings For Node Ownership'),
     '#description' => t('Drupal sends this email whenever a node would be claimed or any claim would be approved by admin.'),
   );
-
+  module_load_include('inc', 'nodeownership', 'includes/nodeownership');
   $email_token_help = t('Available variables are:') . ' !username, !site, !uri, !uri_brief, !mailto, !date.';
 
   $form['email']['user_claim'] = array(
