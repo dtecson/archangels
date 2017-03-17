@@ -1,2 +1,6 @@
 # Ignore configuration files that may contain sensitive information.
 sites/*/*settings*.php
+
+# Ignore paths that contain minified content.
+sites/default/files/css/*
+sites/default/files/js/*
