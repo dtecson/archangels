@@ -1,0 +1,12 @@
+/**
+ * Place your custom styles here.
+ */
+
+.views-field-field-award-image img{
+	display: inline;
+}
+
+.node-bio .field-item{
+	float:left;
+	padding: 4px;
+}
